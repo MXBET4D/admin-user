@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Admin Panel - MAXBET4D</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Admin Panel - MAXBET4D</title>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<!-- Firebase (compat) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
-  <script>
+<script>
+  // <-- Ganti config jika perlu; saya pakai yang kamu berikan -->
   const firebaseConfig = {
     apiKey: "AIzaSyDoerH0GZNG9QmCMCRqtmlFBbldKdCDIqw",
     authDomain: "maxbet4d-b8bf0.firebaseapp.com",
@@ -22,192 +23,643 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
   const auth = firebase.auth();
-  </script>
+</script>
 
-  <style>
-    body { font-family: Arial, sans-serif; background:#0a0f1c; color:white; margin:0; }
-    header { background:#111a33; padding:15px; text-align:center; color:#FFD700; font-size:20px; font-weight:bold; }
-    .container { padding:15px; }
-    .card { background:#1a1a1a; padding:15px; margin:10px 0; border-radius:8px; }
-    table { width:100%; border-collapse:collapse; margin-top:10px; }
-    th, td { border:1px solid #444; padding:8px; text-align:left; }
-    th { background:#222; }
-    button { padding:5px 10px; margin:2px; cursor:pointer; border:none; border-radius:4px; }
-    .btn-approve { background:#00cc66; color:white; }
-    .btn-reject { background:#ff4444; color:white; }
-    .btn-edit { background:#FFD700; color:#000; }
-    .login-box { max-width:300px; margin:50px auto; background:#111; padding:20px; border-radius:8px; text-align:center; }
-    .login-box input { width:90%; padding:8px; margin:6px 0; border-radius:4px; border:none; }
-    .login-box button { width:100%; padding:8px; background:#FFD700; border:none; border-radius:4px; font-weight:bold; }
-    .edit-form { background:#222; padding:10px; margin-top:5px; border-radius:6px; }
-    .edit-form input { width:95%; margin:5px 0; padding:6px; }
-  </style>
+<style>
+  :root{
+    --bg:#0a0f1c; --card:#14181f; --muted:#bdbdbd; --accent:#ffd700; --danger:#ff4444; --ok:#00cc66;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg);color:#fff}
+  header{background:#0f1730;padding:14px 18px;color:var(--accent);display:flex;align-items:center;justify-content:space-between}
+  header h1{margin:0;font-size:18px}
+  .wrap{display:flex;min-height:calc(100vh - 56px)}
+  nav.sidebar{width:220px;background:#071129;padding:18px;border-right:1px solid rgba(255,215,0,0.06)}
+  nav.sidebar .brand{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  nav.sidebar .brand img{height:26px}
+  nav.sidebar button{width:100%;background:#111a33;border:none;color:var(--accent);padding:10px;border-radius:6px;cursor:pointer;margin-bottom:8px;text-align:left}
+  nav.sidebar button.active{background:linear-gradient(90deg,#1e3c72,#2a5298);color:#fff}
+  main{flex:1;padding:16px;overflow:auto}
+  .card{background:var(--card);border-radius:10px;padding:12px;margin-bottom:14px;box-shadow:0 6px 18px rgba(0,0,0,0.6)}
+  .flex{display:flex;gap:10px;align-items:center}
+  .right{margin-left:auto}
+  input, select, textarea{background:#0b0f14;border:1px solid rgba(255,215,0,0.08);color:#fff;padding:8px;border-radius:6px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.04);text-align:left}
+  th{color:var(--muted);font-weight:600;background:rgba(0,0,0,0.1)}
+  .btn{padding:6px 10px;border-radius:6px;border:none;cursor:pointer}
+  .btn-primary{background:var(--accent);color:#111}
+  .btn-approve{background:var(--ok);color:#fff}
+  .btn-reject{background:var(--danger);color:#fff}
+  .btn-edit{background:#2a2a2a;color:var(--accent)}
+  .search-row{display:flex;gap:8px;margin-bottom:10px}
+  .small{font-size:12px;color:var(--muted)}
+  .modal{position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:50}
+  .modal .box{background:#08111a;padding:18px;border-radius:10px;min-width:320px;max-width:880px}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+  .row{display:flex;gap:8px}
+  .row .col{flex:1}
+  .note{font-size:12px;color:var(--muted);margin-top:6px}
+  .top-actions{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+  .logout{background:#222;color:var(--accent);padding:6px 10px;border-radius:6px;border:none;cursor:pointer}
+  @media(max-width:900px){
+    nav.sidebar{width:100%;display:flex;overflow-x:auto;padding:10px;gap:8px}
+    .wrap{flex-direction:column}
+  }
+</style>
 </head>
 <body>
 
-<header>🔑 Admin Panel MAXBET4D</header>
+<header>
+  <h1>🔒 Admin Panel MAXBET4D</h1>
+  <div id="authArea">
+    <!-- will be replaced after auth -->
+    <button id="btnSignOut" class="logout" style="display:none" onclick="doSignOut()">Logout</button>
+  </div>
+</header>
 
-<div id="loginBox" class="login-box">
-  <h3>Login Admin</h3>
-  <input type="email" id="adminEmail" placeholder="Email Admin">
-  <input type="password" id="adminPass" placeholder="Password">
-  <button onclick="adminLogin()">Login</button>
+<!-- LOGIN card (shows when not authed) -->
+<div id="loginCard" class="card" style="max-width:420px;margin:18px auto">
+  <h3 style="margin-top:0">Admin Login</h3>
+  <div style="display:grid;gap:8px">
+    <input id="email" type="email" placeholder="admin@example.com" />
+    <input id="password" type="password" placeholder="password" />
+    <button class="btn btn-primary" onclick="doSignIn()">Login</button>
+    <div class="small">Gunakan Firebase Authentication — tambahkan akun admin di console Firebase (Email & Password).</div>
+  </div>
 </div>
 
-<div id="adminArea" style="display:none;" class="container">
+<!-- MAIN PANEL (visible when signed in) -->
+<div id="panel" style="display:none">
+  <div class="wrap">
+    <nav class="sidebar">
+      <div class="brand"><img src="https://raw.githubusercontent.com/reyreygits/ariptoto11/main/maxbet.png" alt="logo"/><strong style="color:var(--accent)">MAXBET4D</strong></div>
+      <button id="menuUsers" class="active" onclick="switchView('users', this)">All User</button>
+      <button id="menuDeposits" onclick="switchView('deposits', this)">Deposit</button>
+      <button id="menuWithdraws" onclick="switchView('withdraws', this)">Withdraw</button>
+      <button id="menuReks" onclick="switchView('reks', this)">Rekening</button>
+      <div style="height:8px"></div>
+      <button onclick="loadAll()" style="background:#0b0f14;color:var(--muted)">Refresh</button>
+      <div style="height:8px"></div>
+      <button onclick="doSignOut()" style="background:#111a33;color:var(--accent)">Sign out</button>
+    </nav>
 
-  <h2>👤 Daftar User</h2>
-  <div id="userList"></div>
+    <main>
+      <!-- USERS VIEW -->
+      <section id="view-users" style="display:block">
+        <div class="card">
+          <div class="flex">
+            <h3 style="margin:0">All Users</h3>
+            <div class="right small" id="usersCount"></div>
+          </div>
 
-  <h2>💸 Deposit Request</h2>
-  <div id="depositList"></div>
+          <div class="top-actions">
+            <input id="userSearch" placeholder="Cari username..." oninput="renderUsers()" style="min-width:220px" />
+            <select id="sortUsers" onchange="renderUsers()">
+              <option value="id">Sort: Username</option>
+              <option value="balance_desc">Balance (High → Low)</option>
+              <option value="balance_asc">Balance (Low → High)</option>
+            </select>
+            <button class="btn" onclick="loadUsers()">Reload</button>
+          </div>
 
-  <h2>💰 Withdraw Request</h2>
-  <div id="withdrawList"></div>
+          <div id="usersTable"></div>
+        </div>
+      </section>
 
-  <button onclick="logout()">Logout</button>
+      <!-- DEPOSITS VIEW -->
+      <section id="view-deposits" style="display:none">
+        <div class="card">
+          <div class="flex">
+            <h3 style="margin:0">Deposit Requests</h3>
+            <div class="right small" id="depositCount"></div>
+          </div>
+
+          <div class="top-actions">
+            <select id="filterDepositStatus" onchange="loadDeposits()">
+              <option value="Pending">Pending</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+              <option value="All">All</option>
+            </select>
+            <input id="depositSearch" placeholder="Cari username..." oninput="loadDepositsDebounced()" />
+            <button class="btn" onclick="loadDeposits()">Reload</button>
+          </div>
+
+          <div id="depositsTable"></div>
+        </div>
+      </section>
+
+      <!-- WITHDRAWS VIEW -->
+      <section id="view-withdraws" style="display:none">
+        <div class="card">
+          <div class="flex">
+            <h3 style="margin:0">Withdraw Requests</h3>
+            <div class="right small" id="withdrawCount"></div>
+          </div>
+
+          <div class="top-actions">
+            <select id="filterWithdrawStatus" onchange="loadWithdraws()">
+              <option value="Pending">Pending</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+              <option value="All">All</option>
+            </select>
+            <input id="withdrawSearch" placeholder="Cari username..." oninput="loadWithdrawsDebounced()" />
+            <button class="btn" onclick="loadWithdraws()">Reload</button>
+          </div>
+
+          <div id="withdrawsTable"></div>
+        </div>
+      </section>
+
+      <!-- REKENING VIEW -->
+      <section id="view-reks" style="display:none">
+        <div class="card">
+          <div class="flex">
+            <h3 style="margin:0">Daftar Rekening Tujuan</h3>
+            <div class="right">
+              <button class="btn btn-primary" onclick="openRekModal()">Tambah Rekening</button>
+            </div>
+          </div>
+
+          <div id="reksTable" style="margin-top:10px"></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- EDIT USER MODAL -->
+<div id="modalEdit" class="modal">
+  <div class="box">
+    <h3>Edit User: <span id="editUserId"></span></h3>
+    <div style="display:grid;gap:8px;margin-top:8px">
+      <label>Username</label>
+      <input id="edit_username" disabled />
+      <label>Nama Rekening</label>
+      <input id="edit_nama" />
+      <label>Bank / E-Wallet</label>
+      <input id="edit_bank" />
+      <label>Nomor Rekening</label>
+      <input id="edit_rekening" />
+      <label>Phone</label>
+      <input id="edit_phone" />
+      <div class="row">
+        <div class="col">
+          <label>Set Saldo (angka)</label>
+          <input id="edit_balance_set" placeholder="isi utk set total saldo" />
+        </div>
+        <div class="col">
+          <label>Tambah/Kurangi Saldo (pakai - untuk kurangi)</label>
+          <input id="edit_balance_inc" placeholder="misal 50000 atau -20000" />
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+        <button class="btn" onclick="closeModal('modalEdit')">Batal</button>
+        <button class="btn btn-primary" onclick="saveUserEdits()">Simpan</button>
+      </div>
+      <div class="note">Kamu bisa set saldo baru atau increment (bertanda + / -). Jika isi keduanya, increment akan diterapkan setelah set.</div>
+    </div>
+  </div>
+</div>
+
+<!-- REKENING MODAL -->
+<div id="modalRek" class="modal">
+  <div class="box">
+    <h3 id="rekModalTitle">Tambah Rekening</h3>
+    <div style="display:grid;gap:8px;margin-top:8px">
+      <label>Bank / E-Wallet</label>
+      <input id="rek_bank" />
+      <label>No. Rekening</label>
+      <input id="rek_no" />
+      <label>Atas Nama</label>
+      <input id="rek_name" />
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn" onclick="closeModal('modalRek')">Batal</button>
+        <button class="btn btn-primary" onclick="saveRek()">Simpan</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-function adminLogin(){
-  const email = document.getElementById("adminEmail").value;
-  const pass = document.getElementById("adminPass").value;
-  auth.signInWithEmailAndPassword(email, pass)
-    .then(()=> {
-      document.getElementById("loginBox").style.display="none";
-      document.getElementById("adminArea").style.display="block";
-      loadUsers(); loadDeposits(); loadWithdraws();
-    })
-    .catch(err=>alert("Login gagal: "+err.message));
-}
+  // --- utilities ---
+  const $ = (id)=>document.getElementById(id);
+  let currentEditUser = null;
+  let depositsCache = [], withdrawsCache = [], usersCache = [], reksCache = [];
 
-function logout(){
-  auth.signOut();
-  document.getElementById("adminArea").style.display="none";
-  document.getElementById("loginBox").style.display="block";
-}
+  // debounce helpers
+  function debounce(fn, wait=400){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),wait);} }
 
-// Load Users
-function loadUsers(){
-  db.collection("users").get().then(snap=>{
-    let html = "<table><tr><th>Username</th><th>Saldo</th><th>Bank</th><th>Rekening</th><th>HP</th><th>Tgl Join</th><th>Aksi</th></tr>";
-    snap.forEach(doc=>{
-      let d=doc.data();
-      let tgl = d.createdAt ? new Date(d.createdAt.seconds*1000).toLocaleString() : "-";
-      html += `<tr>
-        <td>${doc.id}</td>
-        <td>Rp ${d.balance||0}</td>
-        <td>${d.bank||''}</td>
-        <td>${d.rekening||''}</td>
-        <td>${d.phone||''}</td>
-        <td>${tgl}</td>
-        <td><button class="btn-edit" onclick="editUser('${doc.id}')">Edit</button></td>
-      </tr>
-      <tr id="edit-${doc.id}" style="display:none;">
-        <td colspan="7">
-          <div class="edit-form">
-            <input id="saldo-${doc.id}" type="number" placeholder="Saldo" value="${d.balance||0}">
-            <input id="bank-${doc.id}" type="text" placeholder="Bank" value="${d.bank||''}">
-            <input id="rek-${doc.id}" type="text" placeholder="Rekening" value="${d.rekening||''}">
-            <input id="phone-${doc.id}" type="text" placeholder="No HP" value="${d.phone||''}">
-            <button onclick="saveUser('${doc.id}')">Simpan</button>
-            <button onclick="cancelEdit('${doc.id}')">Batal</button>
-          </div>
-        </td>
-      </tr>`;
-    });
-    html+="</table>";
-    document.getElementById("userList").innerHTML=html;
+  const loadDepositsDebounced = debounce(loadDeposits, 350);
+  const loadWithdrawsDebounced = debounce(loadWithdraws, 350);
+
+  // --- Auth ---
+  auth.onAuthStateChanged(user=>{
+    if(user){
+      $('loginCard').style.display = 'none';
+      $('panel').style.display = 'block';
+      $('btnSignOut').style.display = 'inline-block';
+      loadAll();
+    } else {
+      $('loginCard').style.display = 'block';
+      $('panel').style.display = 'none';
+      $('btnSignOut').style.display = 'none';
+    }
   });
-}
 
-function editUser(uid){
-  document.getElementById("edit-"+uid).style.display="table-row";
-}
-function cancelEdit(uid){
-  document.getElementById("edit-"+uid).style.display="none";
-}
-function saveUser(uid){
-  let saldo = parseInt(document.getElementById("saldo-"+uid).value);
-  let bank = document.getElementById("bank-"+uid).value;
-  let rek = document.getElementById("rek-"+uid).value;
-  let phone = document.getElementById("phone-"+uid).value;
-  db.collection("users").doc(uid).update({
-    balance: saldo, bank: bank, rekening: rek, phone: phone
-  }).then(()=>{
-    alert("User berhasil diupdate!");
-    loadUsers();
-  });
-}
+  function doSignIn(){
+    const email = $('email').value.trim();
+    const pass = $('password').value;
+    if(!email || !pass){ alert('Isi email & password admin'); return; }
+    auth.signInWithEmailAndPassword(email, pass).catch(e=>alert('Login error: '+e.message));
+  }
+  function doSignOut(){ auth.signOut(); }
 
-// Load Deposits
-function loadDeposits(){
-  db.collection("history").where("type","==","Deposit").where("status","==","Pending").get().then(snap=>{
-    let html = "<table><tr><th>User</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr>";
-    snap.forEach(doc=>{
-      let d=doc.data();
+  // --- view switcher ---
+  function switchView(view, btn){
+    document.querySelectorAll('section').forEach(s=>s.style.display='none');
+    document.querySelectorAll('nav.sidebar button').forEach(b=>b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+    $('view-'+view).style.display='block';
+    if(view==='users') renderUsers();
+    if(view==='deposits') loadDeposits();
+    if(view==='withdraws') loadWithdraws();
+    if(view==='reks') loadReks();
+  }
+
+  // --- load everything ---
+  function loadAll(){
+    loadUsers(); loadDeposits(); loadWithdraws(); loadReks();
+  }
+
+  // ---------- USERS ----------
+  async function loadUsers(){
+    try{
+      const snap = await db.collection('users').get();
+      usersCache = [];
+      snap.forEach(d=> usersCache.push({id:d.id, ...d.data()}));
+      renderUsers();
+    }catch(e){ console.error(e); alert('Gagal load users: '+e.message) }
+  }
+
+  function renderUsers(){
+    const q = $('userSearch').value.trim().toLowerCase();
+    let list = usersCache.slice();
+    // filter
+    if(q) list = list.filter(u=> (u.id||'').toLowerCase().includes(q) || (u.nama||'').toLowerCase().includes(q));
+    // sort
+    const sort = $('sortUsers').value;
+    if(sort==='balance_desc') list.sort((a,b)=>(b.balance||0)-(a.balance||0));
+    else if(sort==='balance_asc') list.sort((a,b)=>(a.balance||0)-(b.balance||0));
+    else list.sort((a,b)=> (a.id||'').localeCompare(b.id||''));
+    $('usersCount').innerText = list.length+' users';
+    // render table
+    let html = '<table><thead><tr><th>No</th><th>Username</th><th>Nama</th><th>Bank</th><th>Rek</th><th>Phone</th><th>Saldo</th><th>Aksi</th></tr></thead><tbody>';
+    list.forEach((u,i)=>{
       html += `<tr>
-        <td>${d.user}</td>
-        <td>Rp ${d.amount}</td>
-        <td>${d.status}</td>
+        <td>${i+1}</td>
+        <td>${escapeHtml(u.id)}</td>
+        <td>${escapeHtml(u.nama||'')}</td>
+        <td>${escapeHtml(u.bank||'')}</td>
+        <td>${escapeHtml(u.rekening||'')}</td>
+        <td>${escapeHtml(u.phone||'')}</td>
+        <td>Rp ${numberWithCommas(u.balance||0)}</td>
         <td>
-          <button class="btn-approve" onclick="approveDeposit('${doc.id}','${d.user}',${d.amount})">Approve</button>
-          <button class="btn-reject" onclick="reject('${doc.id}')">Tolak</button>
+          <button class="btn btn-edit" onclick="openEditModal('${u.id}')">Edit</button>
+          <button class="btn" onclick="impersonate('${u.id}')">Impersonate</button>
         </td>
       </tr>`;
     });
-    html+="</table>";
-    document.getElementById("depositList").innerHTML=html;
-  });
-}
+    html += '</tbody></table>';
+    $('usersTable').innerHTML = html;
+  }
 
-// Load Withdraws
-function loadWithdraws(){
-  db.collection("history").where("type","==","Withdraw").where("status","==","Pending").get().then(snap=>{
-    let html = "<table><tr><th>User</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr>";
-    snap.forEach(doc=>{
-      let d=doc.data();
+  // open edit modal (per-user)
+  function openEditModal(userId){
+    currentEditUser = userId;
+    const u = usersCache.find(x=>x.id===userId) || {};
+    $('editUserId').innerText = userId;
+    $('edit_username').value = userId;
+    $('edit_nama').value = u.nama||'';
+    $('edit_bank').value = u.bank||'';
+    $('edit_rekening').value = u.rekening||'';
+    $('edit_phone').value = u.phone||'';
+    $('edit_balance_set').value = '';
+    $('edit_balance_inc').value = '';
+    openModal('modalEdit');
+  }
+
+  // save edits one-by-one (more canggih)
+  async function saveUserEdits(){
+    if(!currentEditUser) return;
+    const updates = {};
+    const nama = $('edit_nama').value.trim();
+    const bank = $('edit_bank').value.trim();
+    const rek = $('edit_rekening').value.trim();
+    const phone = $('edit_phone').value.trim();
+    const setBalanceRaw = $('edit_balance_set').value.trim();
+    const incRaw = $('edit_balance_inc').value.trim();
+
+    if(nama) updates.nama = nama;
+    if(bank) updates.bank = bank;
+    if(rek) updates.rekening = rek;
+    if(phone) updates.phone = phone;
+
+    try{
+      // apply set balance first (if provided)
+      if(setBalanceRaw !== ''){
+        const setVal = parseInt(setBalanceRaw.toString().replace(/[^0-9\-]/g,''),10);
+        if(isNaN(setVal)) { alert('Saldo (set) tidak valid'); return; }
+        updates.balance = setVal;
+        await db.collection('users').doc(currentEditUser).update({ ...updates });
+        // if also increment specified, do increment afterwards
+        if(incRaw !== ''){
+          const incVal = parseInt(incRaw.toString().replace(/[^0-9\-]/g,''),10);
+          if(isNaN(incVal)) { alert('Saldo (inc) tidak valid'); return; }
+          await db.collection('users').doc(currentEditUser).update({
+            balance: firebase.firestore.FieldValue.increment(incVal)
+          });
+        }
+      } else {
+        // no set: maybe increment or only fields
+        if(incRaw !== ''){
+          const incVal = parseInt(incRaw.toString().replace(/[^0-9\-]/g,''),10);
+          if(isNaN(incVal)) { alert('Saldo (inc) tidak valid'); return; }
+          await db.collection('users').doc(currentEditUser).update({
+            ...updates,
+            balance: firebase.firestore.FieldValue.increment(incVal)
+          });
+        } else {
+          // only update fields
+          if(Object.keys(updates).length>0){
+            await db.collection('users').doc(currentEditUser).update(updates);
+          } else {
+            alert('Tidak ada perubahan untuk disimpan.');
+            return;
+          }
+        }
+      }
+      closeModal('modalEdit');
+      await loadUsers();
+      alert('Perubahan tersimpan.');
+    }catch(e){
+      console.error(e);
+      alert('Gagal menyimpan: '+e.message);
+    }
+  }
+
+  // impersonate (quick link to open userarea page in new tab — optional)
+  function impersonate(userId){
+    // contoh: buka userarea?username=...
+    const url = window.location.origin + '/?impersonate=' + encodeURIComponent(userId);
+    window.open(url, '_blank');
+  }
+
+  // ---------- DEPOSITS ----------
+  async function loadDeposits(){
+    try{
+      const status = $('filterDepositStatus').value || 'Pending';
+      let q = db.collection('history').where('type','==','Deposit');
+      if(status!=='All') q = q.where('status','==',status);
+      // simple username filter
+      const uname = $('depositSearch').value.trim();
+      const snap = await q.orderBy('date','desc').limit(200).get();
+      depositsCache = [];
+      snap.forEach(d=>depositsCache.push({id:d.id, ...d.data()}));
+      renderDeposits();
+    }catch(e){ console.error(e); alert('Gagal load deposits: '+e.message) }
+  }
+
+  function renderDeposits(){
+    const q = $('depositSearch').value.trim().toLowerCase();
+    let list = depositsCache.slice();
+    if(q) list = list.filter(x=> (x.user||'').toLowerCase().includes(q));
+    $('depositCount').innerText = list.length+' records';
+    let html = '<table><thead><tr><th>No</th><th>Tanggal</th><th>User</th><th>Jumlah</th><th>Method</th><th>Status</th><th>Note</th><th>Admin</th><th>Aksi</th></tr></thead><tbody>';
+    list.forEach((d,i)=>{
+      const date = d.date ? (new Date(d.date.seconds?d.date.seconds*1000:d.date)).toLocaleString() : '-';
       html += `<tr>
-        <td>${d.user}</td>
-        <td>Rp ${d.amount}</td>
-        <td>${d.status}</td>
+        <td>${i+1}</td>
+        <td>${date}</td>
+        <td>${escapeHtml(d.user||'')}</td>
+        <td>Rp ${numberWithCommas(d.amount||0)}</td>
+        <td>${escapeHtml(d.method||'')}</td>
+        <td>${escapeHtml(d.status||'')}</td>
+        <td>${escapeHtml(d.note||'')}</td>
+        <td>${escapeHtml(d.admin||'')}</td>
         <td>
-          <button class="btn-approve" onclick="approveWithdraw('${doc.id}','${d.user}',${d.amount})">Approve</button>
-          <button class="btn-reject" onclick="reject('${doc.id}')">Tolak</button>
+          ${d.status==='Pending' ? `<button class="btn btn-approve" onclick="approveDeposit('${d.id}','${d.user}',${d.amount})">Approve</button>
+          <button class="btn btn-reject" onclick="rejectTx('${d.id}')">Reject</button>` : `<button class="btn" onclick="undoStatus('${d.id}')">Reset→Pending</button>`}
         </td>
       </tr>`;
     });
-    html+="</table>";
-    document.getElementById("withdrawList").innerHTML=html;
-  });
-}
+    html += '</tbody></table>';
+    $('depositsTable').innerHTML = html;
+  }
 
-// Approve Deposit
-function approveDeposit(docId, user, amount){
-  db.collection("users").doc(user).update({
-    balance: firebase.firestore.FieldValue.increment(amount)
-  });
-  db.collection("history").doc(docId).update({status:"Approved"});
-  alert("Deposit Approved!");
-  loadDeposits(); loadUsers();
-}
+  async function approveDeposit(docId, user, amount){
+    if(!confirm('Approve deposit Rp '+numberWithCommas(amount)+' untuk '+user+' ?')) return;
+    try{
+      await db.runTransaction(async tx=>{
+        const userRef = db.collection('users').doc(user);
+        const uDoc = await tx.get(userRef);
+        if(!uDoc.exists) tx.set(userRef, {balance:Number(amount)});
+        else tx.update(userRef, { balance: firebase.firestore.FieldValue.increment(amount) });
+        tx.update(db.collection('history').doc(docId), { status: 'Approved', admin: auth.currentUser.email });
+      });
+      alert('Deposit approved & saldo diupdate.');
+      loadDeposits(); loadUsers();
+    }catch(e){ console.error(e); alert('Error approve: '+e.message) }
+  }
 
-// Approve Withdraw
-function approveWithdraw(docId, user, amount){
-  db.collection("users").doc(user).update({
-    balance: firebase.firestore.FieldValue.increment(-amount)
-  });
-  db.collection("history").doc(docId).update({status:"Approved"});
-  alert("Withdraw Approved!");
-  loadWithdraws(); loadUsers();
-}
+  // ---------- WITHDRAWS ----------
+  async function loadWithdraws(){
+    try{
+      const status = $('filterWithdrawStatus').value || 'Pending';
+      let q = db.collection('history').where('type','==','Withdraw');
+      if(status!=='All') q = q.where('status','==',status);
+      const snap = await q.orderBy('date','desc').limit(200).get();
+      withdrawsCache = [];
+      snap.forEach(d=>withdrawsCache.push({id:d.id, ...d.data()}));
+      renderWithdraws();
+    }catch(e){ console.error(e); alert('Gagal load withdraws: '+e.message) }
+  }
 
-// Reject Transaksi
-function reject(docId){
-  db.collection("history").doc(docId).update({status:"Rejected"});
-  alert("Transaksi ditolak!");
-  loadDeposits(); loadWithdraws();
-}
+  function renderWithdraws(){
+    const q = $('withdrawSearch').value.trim().toLowerCase();
+    let list = withdrawsCache.slice();
+    if(q) list = list.filter(x=> (x.user||'').toLowerCase().includes(q));
+    $('withdrawCount').innerText = list.length+' records';
+    let html = '<table><thead><tr><th>No</th><th>Tanggal</th><th>User</th><th>Jumlah</th><th>Bank Tujuan</th><th>Status</th><th>Note</th><th>Aksi</th></tr></thead><tbody>';
+    list.forEach((d,i)=>{
+      const date = d.date ? (new Date(d.date.seconds?d.date.seconds*1000:d.date)).toLocaleString() : '-';
+      html += `<tr>
+        <td>${i+1}</td>
+        <td>${date}</td>
+        <td>${escapeHtml(d.user||'')}</td>
+        <td>Rp ${numberWithCommas(d.amount||0)}</td>
+        <td>${escapeHtml(d.targetBank||d.bankTarget||'')}</td>
+        <td>${escapeHtml(d.status||'')}</td>
+        <td>${escapeHtml(d.note||'')}</td>
+        <td>
+          ${d.status==='Pending' ? `<button class="btn btn-approve" onclick="approveWithdraw('${d.id}','${d.user}',${d.amount})">Approve</button>
+          <button class="btn btn-reject" onclick="rejectTx('${d.id}')">Reject</button>` : `<button class="btn" onclick="undoStatus('${d.id}')">Reset→Pending</button>`}
+        </td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    $('withdrawsTable').innerHTML = html;
+  }
+
+  async function approveWithdraw(docId, user, amount){
+    if(!confirm('Approve withdraw Rp '+numberWithCommas(amount)+' untuk '+user+' ? (ini akan mengurangi saldo user)')) return;
+    try{
+      await db.runTransaction(async tx=>{
+        const userRef = db.collection('users').doc(user);
+        const uDoc = await tx.get(userRef);
+        const current = (uDoc.exists && uDoc.data().balance) ? uDoc.data().balance : 0;
+        if(current < amount) throw new Error('Saldo user tidak cukup. current:'+current);
+        tx.update(userRef, { balance: firebase.firestore.FieldValue.increment(-amount) });
+        tx.update(db.collection('history').doc(docId), { status: 'Approved', admin: auth.currentUser.email });
+      });
+      alert('Withdraw approved & saldo dikurangi.');
+      loadWithdraws(); loadUsers();
+    }catch(e){ console.error(e); alert('Error approve withdraw: '+e.message) }
+  }
+
+  // reject tx
+  async function rejectTx(docId){
+    if(!confirm('Tolak transaksi ini?')) return;
+    try{
+      await db.collection('history').doc(docId).update({ status:'Rejected', admin: auth.currentUser.email });
+      alert('Transaksi ditolak.');
+      loadDeposits(); loadWithdraws();
+    }catch(e){ console.error(e); alert('Gagal tolak: '+e.message) }
+  }
+
+  // undo status (set ke Pending)
+  async function undoStatus(docId){
+    if(!confirm('Set status transaksi kembali ke Pending?')) return;
+    try{
+      await db.collection('history').doc(docId).update({ status:'Pending', admin: auth.currentUser.email });
+      loadDeposits(); loadWithdraws();
+      alert('Status direset ke Pending.');
+    }catch(e){ console.error(e); alert('Gagal reset: '+e.message) }
+  }
+
+  // ---------- REKENING ----------
+  async function loadReks(){
+    try{
+      const snap = await db.collection('rekeningen').orderBy('bank').get();
+      reksCache = [];
+      snap.forEach(d=>reksCache.push({id:d.id, ...d.data()}));
+      renderReks();
+    }catch(e){ console.error(e); $('reksTable').innerText='Gagal load reks: '+e.message }
+  }
+
+  function renderReks(){
+    let html = '<table><thead><tr><th>No</th><th>Bank</th><th>No Rek</th><th>A/N</th><th>Aksi</th></tr></thead><tbody>';
+    reksCache.forEach((r,i)=>{
+      html += `<tr>
+        <td>${i+1}</td>
+        <td>${escapeHtml(r.bank||'')}</td>
+        <td>${escapeHtml(r.no||'')}</td>
+        <td>${escapeHtml(r.name||'')}</td>
+        <td>
+          <button class="btn" onclick="editRek('${r.id}')">Edit</button>
+          <button class="btn btn-reject" onclick="deleteRek('${r.id}')">Hapus</button>
+        </td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    $('reksTable').innerHTML = html;
+  }
+
+  function openRekModal(){
+    $('rekModalTitle').innerText = 'Tambah Rekening';
+    $('rek_bank').value=''; $('rek_no').value=''; $('rek_name').value='';
+    $('modalRek').dataset.editId = '';
+    openModal('modalRek');
+  }
+  async function saveRek(){
+    const bank = $('rek_bank').value.trim();
+    const no = $('rek_no').value.trim();
+    const name = $('rek_name').value.trim();
+    if(!bank || !no || !name){ alert('Lengkapi semua field'); return; }
+    try{
+      const editId = $('modalRek').dataset.editId;
+      if(editId){
+        await db.collection('rekeningen').doc(editId).update({ bank, no, name });
+        alert('Rekening diperbarui.');
+      } else {
+        await db.collection('rekeningen').add({ bank, no, name });
+        alert('Rekening ditambahkan.');
+      }
+      closeModal('modalRek'); loadReks();
+    }catch(e){ console.error(e); alert('Gagal simpan rek: '+e.message) }
+  }
+  function editRek(id){
+    const r = reksCache.find(x=>x.id===id);
+    if(!r) return;
+    $('rekModalTitle').innerText = 'Edit Rekening';
+    $('rek_bank').value = r.bank || '';
+    $('rek_no').value = r.no || '';
+    $('rek_name').value = r.name || '';
+    $('modalRek').dataset.editId = id;
+    openModal('modalRek');
+  }
+  async function deleteRek(id){
+    if(!confirm('Hapus rekening ini?')) return;
+    try{
+      await db.collection('rekeningen').doc(id).delete();
+      alert('Dihapus');
+      loadReks();
+    }catch(e){ console.error(e); alert('Gagal hapus: '+e.message) }
+  }
+
+  // ---------- helpers ----------
+  function openModal(id){ $(id).style.display = 'flex'; }
+  function closeModal(id){ $(id).style.display = 'none'; }
+
+  function escapeHtml(s=''){ return (''+s).replace(/[&<>"']/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+  function numberWithCommas(x){ if(x===undefined||x===null) return '0'; return (''+x).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+
+  // simple initial loads
+  function loadDeposits(){ loadDeposits(); } // placeholder to satisfy potential call before auth
+  function loadWithdraws(){ loadWithdraws(); }
+
+  // expose functions used from HTML strings
+  window.loadUsers = loadUsers;
+  window.switchView = switchView;
+  window.openEditModal = openEditModal;
+  window.saveUserEdits = saveUserEdits;
+  window.closeModal = closeModal;
+  window.approveDeposit = approveDeposit;
+  window.rejectTx = rejectTx;
+  window.approveWithdraw = approveWithdraw;
+  window.loadDeposits = loadDeposits;
+  window.loadWithdraws = loadWithdraws;
+  window.loadAll = loadAll;
+  window.openRekModal = openRekModal;
+  window.saveRek = saveRek;
+  window.editRek = editRek;
+  window.deleteRek = deleteRek;
+  window.doSignIn = doSignIn;
+  window.doSignOut = doSignOut;
+  window.impersonate = impersonate;
+  window.undoStatus = undoStatus;
+  window.loadDepositsDebounced = loadDepositsDebounced;
+  window.loadWithdrawsDebounced = loadWithdrawsDebounced;
+  // bind debounced input listeners
+  document.addEventListener('DOMContentLoaded', ()=> {
+    $('depositSearch')?.addEventListener('input', loadDepositsDebounced);
+    $('withdrawSearch')?.addEventListener('input', loadWithdrawsDebounced);
+  });
+
 </script>
 </body>
 </html>
