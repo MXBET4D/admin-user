@@ -306,7 +306,7 @@
     }catch(e){ console.error(e); alert('Gagal load users: '+e.message) }
   }
 
-  function renderUsers(){
+   function renderUsers(){
     const q = $('userSearch').value.trim().toLowerCase();
     let list = usersCache.slice();
     // filter
@@ -318,8 +318,11 @@
     else list.sort((a,b)=> (a.id||'').localeCompare(b.id||''));
     $('usersCount').innerText = list.length+' users';
     // render table
-    let html = '<table><thead><tr><th>No</th><th>Username</th><th>Nama</th><th>Bank</th><th>Rek</th><th>Phone</th><th>Saldo</th><th>Aksi</th></tr></thead><tbody>';
+    let html = '<table><thead><tr><th>No</th><th>Username</th><th>Nama</th><th>Bank</th><th>Rek</th><th>Phone</th><th>Saldo</th><th>Gabung</th><th>Aksi</th></tr></thead><tbody>';
     list.forEach((u,i)=>{
+      const joinedAt = u.joinedAt ? 
+        (new Date(u.joinedAt.seconds ? u.joinedAt.seconds*1000 : u.joinedAt)).toLocaleString() 
+        : '-';
       html += `<tr>
         <td>${i+1}</td>
         <td>${escapeHtml(u.id)}</td>
@@ -328,6 +331,7 @@
         <td>${escapeHtml(u.rekening||'')}</td>
         <td>${escapeHtml(u.phone||'')}</td>
         <td>Rp ${numberWithCommas(u.balance||0)}</td>
+        <td>${joinedAt}</td>
         <td>
           <button class="btn btn-edit" onclick="openEditModal('${u.id}')">Edit</button>
           <button class="btn" onclick="impersonate('${u.id}')">Impersonate</button>
