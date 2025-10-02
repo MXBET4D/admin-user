@@ -2,190 +2,186 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Panel Admin</title>
+  <title>Admin Panel - MAXBET4D</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
+  <script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDoerH0GZNG9QmCMCRqtmlFBbldKdCDIqw",
+    authDomain: "maxbet4d-b8bf0.firebaseapp.com",
+    projectId: "maxbet4d-b8bf0",
+    storageBucket: "maxbet4d-b8bf0.firebasestorage.app",
+    messagingSenderId: "1010739873755",
+    appId: "1:1010739873755:web:f63788eafc8237add389fe"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const auth = firebase.auth();
+  </script>
+
   <style>
-    body { font-family: Arial, sans-serif; background:#0d1117; color:#fff; margin:0; }
-    header { background:#161b22; padding:15px; display:flex; justify-content:space-between; align-items:center; }
-    h1 { margin:0; font-size:20px; }
-    button { background:#f85149; border:none; padding:8px 12px; border-radius:6px; color:white; cursor:pointer; }
-    .container { padding:20px; }
-    .section { background:#161b22; margin-bottom:20px; padding:15px; border-radius:8px; }
-    h2 { margin-top:0; color:#58a6ff; }
+    body { font-family: Arial, sans-serif; background:#0a0f1c; color:white; margin:0; }
+    header { background:#111a33; padding:15px; text-align:center; color:#FFD700; font-size:20px; font-weight:bold; }
+    .container { padding:15px; }
+    .card { background:#1a1a1a; padding:15px; margin:10px 0; border-radius:8px; }
     table { width:100%; border-collapse:collapse; margin-top:10px; }
-    th, td { border:1px solid #30363d; padding:8px; text-align:left; }
-    th { background:#21262d; }
-    tr:nth-child(even) { background:#161b22; }
-    tr:nth-child(odd) { background:#0d1117; }
-    input, select {
-      background:#0d1117; color:#fff; border:1px solid #30363d;
-      padding:5px; border-radius:4px; width:100%;
-    }
-    .actions button { margin-right:5px; background:#238636; }
-    .actions .delete { background:#f85149; }
+    th, td { border:1px solid #444; padding:8px; text-align:left; }
+    th { background:#222; }
+    button { padding:5px 10px; margin:2px; cursor:pointer; border:none; border-radius:4px; }
+    .btn-approve { background:#00cc66; color:white; }
+    .btn-reject { background:#ff4444; color:white; }
+    .login-box { max-width:300px; margin:50px auto; background:#111; padding:20px; border-radius:8px; text-align:center; }
+    .login-box input { width:90%; padding:8px; margin:6px 0; border-radius:4px; border:none; }
+    .login-box button { width:100%; padding:8px; background:#FFD700; border:none; border-radius:4px; font-weight:bold; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>🔥 Admin Panel</h1>
-    <button onclick="logout()">Logout</button>
-  </header>
 
-  <div class="container">
-    <!-- Deposit -->
-    <div class="section">
-      <h2>Deposit Requests</h2>
-      <table id="depositTable">
-        <thead>
-          <tr>
-            <th>User</th><th>Amount</th><th>Status</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
+<header>🔑 Admin Panel MAXBET4D</header>
 
-    <!-- Withdraw -->
-    <div class="section">
-      <h2>Withdraw Requests</h2>
-      <table id="withdrawTable">
-        <thead>
-          <tr>
-            <th>User</th><th>Amount</th><th>Status</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
+<div id="loginBox" class="login-box">
+  <h3>Login Admin</h3>
+  <input type="email" id="adminEmail" placeholder="Email Admin">
+  <input type="password" id="adminPass" placeholder="Password">
+  <button onclick="adminLogin()">Login</button>
+</div>
 
-    <!-- Data Rekening -->
-    <div class="section">
-      <h2>Data Rekening User</h2>
-      <table id="userTable">
-        <thead>
-          <tr>
-            <th>User</th><th>Nama</th><th>Rekening</th><th>Bank</th><th>Balance</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
+<div id="adminArea" style="display:none;" class="container">
 
-  <script>
-    // --- Firebase Config ---
-    const firebaseConfig = {
-      apiKey: "AIzaSyDoerH0GZNG9QmCMCRqtmlFBbldKdCDIqw",
-      authDomain: "maxbet4d-b8bf0.firebaseapp.com",
-      projectId: "maxbet4d-b8bf0",
-      storageBucket: "maxbet4d-b8bf0.appspot.com",
-      messagingSenderId: "1010739873755",
-      appId: "1:1010739873755:web:f63788eafc8237add389fe"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
+  <h2>👤 Daftar User</h2>
+  <div id="userList"></div>
 
-    const adminEmails = ["admin@gmail.com"]; // daftar email admin
+  <h2>💸 Deposit Request</h2>
+  <div id="depositList"></div>
 
-    // --- Auth Check ---
-    auth.onAuthStateChanged(user => {
-      if (user && adminEmails.includes(user.email)) {
-        loadDeposits();
-        loadWithdraws();
-        loadUsers();
-      } else {
-        window.location.href = "admin-login.html";
-      }
+  <h2>💰 Withdraw Request</h2>
+  <div id="withdrawList"></div>
+
+  <button onclick="logout()">Logout</button>
+</div>
+
+<script>
+function adminLogin(){
+  const email = document.getElementById("adminEmail").value;
+  const pass = document.getElementById("adminPass").value;
+  auth.signInWithEmailAndPassword(email, pass)
+    .then(()=> {
+      document.getElementById("loginBox").style.display="none";
+      document.getElementById("adminArea").style.display="block";
+      loadUsers(); loadDeposits(); loadWithdraws();
+    })
+    .catch(err=>alert("Login gagal: "+err.message));
+}
+
+function logout(){
+  auth.signOut();
+  document.getElementById("adminArea").style.display="none";
+  document.getElementById("loginBox").style.display="block";
+}
+
+// Load Users
+function loadUsers(){
+  db.collection("users").get().then(snap=>{
+    let html = "<table><tr><th>User</th><th>Saldo</th><th>Bank</th><th>Rek</th><th>Aksi</th></tr>";
+    snap.forEach(doc=>{
+      let d=doc.data();
+      html += `<tr>
+        <td>${doc.id}</td>
+        <td>Rp ${d.balance}</td>
+        <td>${d.bank||''}</td>
+        <td>${d.rekening||''}</td>
+        <td>
+          <button onclick="editBalance('${doc.id}')">Edit Saldo</button>
+        </td>
+      </tr>`;
     });
+    html+="</table>";
+    document.getElementById("userList").innerHTML=html;
+  });
+}
 
-    function logout() {
-      auth.signOut().then(() => window.location.href="admin-login.html");
-    }
+// Load Deposits
+function loadDeposits(){
+  db.collection("history").where("type","==","Deposit").where("status","==","Pending").get().then(snap=>{
+    let html = "<table><tr><th>User</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr>";
+    snap.forEach(doc=>{
+      let d=doc.data();
+      html += `<tr>
+        <td>${d.user}</td>
+        <td>Rp ${d.amount}</td>
+        <td>${d.status}</td>
+        <td>
+          <button class="btn-approve" onclick="approveDeposit('${doc.id}','${d.user}',${d.amount})">Approve</button>
+          <button class="btn-reject" onclick="reject('${doc.id}')">Tolak</button>
+        </td>
+      </tr>`;
+    });
+    html+="</table>";
+    document.getElementById("depositList").innerHTML=html;
+  });
+}
 
-    // --- Load Deposit Requests ---
-    function loadDeposits() {
-      db.collection("history").where("type","==","Deposit")
-        .onSnapshot(snap => {
-          const tbody = document.querySelector("#depositTable tbody");
-          tbody.innerHTML = "";
-          snap.forEach(doc => {
-            const d = doc.data();
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-              <td>${d.user}</td>
-              <td>Rp ${d.amount}</td>
-              <td>${d.status}</td>
-              <td class="actions">
-                <button onclick="updateStatus('${doc.id}','Deposit','Approved')">✔</button>
-                <button class="delete" onclick="updateStatus('${doc.id}','Deposit','Rejected')">✖</button>
-              </td>`;
-            tbody.appendChild(tr);
-          });
-        });
-    }
+// Load Withdraws
+function loadWithdraws(){
+  db.collection("history").where("type","==","Withdraw").where("status","==","Pending").get().then(snap=>{
+    let html = "<table><tr><th>User</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr>";
+    snap.forEach(doc=>{
+      let d=doc.data();
+      html += `<tr>
+        <td>${d.user}</td>
+        <td>Rp ${d.amount}</td>
+        <td>${d.status}</td>
+        <td>
+          <button class="btn-approve" onclick="approveWithdraw('${doc.id}','${d.user}',${d.amount})">Approve</button>
+          <button class="btn-reject" onclick="reject('${doc.id}')">Tolak</button>
+        </td>
+      </tr>`;
+    });
+    html+="</table>";
+    document.getElementById("withdrawList").innerHTML=html;
+  });
+}
 
-    // --- Load Withdraw Requests ---
-    function loadWithdraws() {
-      db.collection("history").where("type","==","Withdraw")
-        .onSnapshot(snap => {
-          const tbody = document.querySelector("#withdrawTable tbody");
-          tbody.innerHTML = "";
-          snap.forEach(doc => {
-            const d = doc.data();
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-              <td>${d.user}</td>
-              <td>Rp ${d.amount}</td>
-              <td>${d.status}</td>
-              <td class="actions">
-                <button onclick="updateStatus('${doc.id}','Withdraw','Approved')">✔</button>
-                <button class="delete" onclick="updateStatus('${doc.id}','Withdraw','Rejected')">✖</button>
-              </td>`;
-            tbody.appendChild(tr);
-          });
-        });
-    }
+// Approve Deposit
+function approveDeposit(docId, user, amount){
+  db.collection("users").doc(user).update({
+    balance: firebase.firestore.FieldValue.increment(amount)
+  });
+  db.collection("history").doc(docId).update({status:"Approved"});
+  alert("Deposit Approved!");
+  loadDeposits(); loadUsers();
+}
 
-    // --- Update Status (Deposit/Withdraw) ---
-    function updateStatus(id,type,status) {
-      db.collection("history").doc(id).update({status:status})
-        .then(()=>alert(type+" "+status));
-    }
+// Approve Withdraw
+function approveWithdraw(docId, user, amount){
+  db.collection("users").doc(user).update({
+    balance: firebase.firestore.FieldValue.increment(-amount)
+  });
+  db.collection("history").doc(docId).update({status:"Approved"});
+  alert("Withdraw Approved!");
+  loadWithdraws(); loadUsers();
+}
 
-    // --- Load Users ---
-    function loadUsers() {
-      db.collection("users").onSnapshot(snap => {
-        const tbody = document.querySelector("#userTable tbody");
-        tbody.innerHTML = "";
-        snap.forEach(doc => {
-          const u = doc.data();
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${doc.id}</td>
-            <td>${u.nama}</td>
-            <td>${u.rekening}</td>
-            <td>${u.bank}</td>
-            <td>Rp ${u.balance}</td>
-            <td class="actions">
-              <button onclick="editBalance('${doc.id}',${u.balance})">💰</button>
-            </td>`;
-          tbody.appendChild(tr);
-        });
-      });
-    }
+// Reject Transaksi
+function reject(docId){
+  db.collection("history").doc(docId).update({status:"Rejected"});
+  alert("Transaksi ditolak!");
+  loadDeposits(); loadWithdraws();
+}
 
-    // --- Edit Balance User ---
-    function editBalance(uid,current) {
-      const newBal = prompt("Saldo baru untuk "+uid, current);
-      if(newBal !== null) {
-        db.collection("users").doc(uid).update({balance:parseInt(newBal)});
-      }
-    }
-  </script>
+// Edit Balance Manual
+function editBalance(userId){
+  let newBalance = prompt("Masukkan saldo baru:");
+  if(newBalance!==null){
+    db.collection("users").doc(userId).update({balance:parseInt(newBalance)});
+    loadUsers();
+  }
+}
+</script>
 </body>
 </html>
