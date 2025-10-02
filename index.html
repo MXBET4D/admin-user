@@ -29,12 +29,13 @@
     header { background:#111a33; padding:15px; text-align:center; color:#FFD700; font-size:20px; font-weight:bold; }
     .container { padding:15px; }
     .card { background:#1a1a1a; padding:15px; margin:10px 0; border-radius:8px; }
-    table { width:100%; border-collapse:collapse; margin-top:10px; }
+    table { width:100%; border-collapse:collapse; margin-top:10px; font-size:14px; }
     th, td { border:1px solid #444; padding:8px; text-align:left; }
     th { background:#222; }
     button { padding:5px 10px; margin:2px; cursor:pointer; border:none; border-radius:4px; }
     .btn-approve { background:#00cc66; color:white; }
     .btn-reject { background:#ff4444; color:white; }
+    .btn-edit { background:#2196F3; color:white; }
     .login-box { max-width:300px; margin:50px auto; background:#111; padding:20px; border-radius:8px; text-align:center; }
     .login-box input { width:90%; padding:8px; margin:6px 0; border-radius:4px; border:none; }
     .login-box button { width:100%; padding:8px; background:#FFD700; border:none; border-radius:4px; font-weight:bold; }
@@ -73,7 +74,7 @@ function adminLogin(){
     .then(()=> {
       document.getElementById("loginBox").style.display="none";
       document.getElementById("adminArea").style.display="block";
-      loadUsers(); loadDeposits(); loadWithdraws();
+      listenUsers(); listenDeposits(); listenWithdraws();
     })
     .catch(err=>alert("Login gagal: "+err.message));
 }
@@ -84,19 +85,20 @@ function logout(){
   document.getElementById("loginBox").style.display="block";
 }
 
-// Load Users
-function loadUsers(){
-  db.collection("users").get().then(snap=>{
-    let html = "<table><tr><th>User</th><th>Saldo</th><th>Bank</th><th>Rek</th><th>Aksi</th></tr>";
+// === LISTENER REALTIME ===
+function listenUsers(){
+  db.collection("users").onSnapshot(snap=>{
+    let html = "<table><tr><th>User</th><th>Saldo</th><th>Bank</th><th>Rekening</th><th>HP</th><th>Aksi</th></tr>";
     snap.forEach(doc=>{
       let d=doc.data();
       html += `<tr>
         <td>${doc.id}</td>
-        <td>Rp ${d.balance}</td>
+        <td>Rp ${d.balance||0}</td>
         <td>${d.bank||''}</td>
         <td>${d.rekening||''}</td>
+        <td>${d.phone||''}</td>
         <td>
-          <button onclick="editBalance('${doc.id}')">Edit Saldo</button>
+          <button class="btn-edit" onclick="editUser('${doc.id}')">Edit</button>
         </td>
       </tr>`;
     });
@@ -105,82 +107,82 @@ function loadUsers(){
   });
 }
 
-// Load Deposits
-function loadDeposits(){
-  db.collection("history").where("type","==","Deposit").where("status","==","Pending").get().then(snap=>{
-    let html = "<table><tr><th>User</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr>";
-    snap.forEach(doc=>{
-      let d=doc.data();
-      html += `<tr>
-        <td>${d.user}</td>
-        <td>Rp ${d.amount}</td>
-        <td>${d.status}</td>
-        <td>
-          <button class="btn-approve" onclick="approveDeposit('${doc.id}','${d.user}',${d.amount})">Approve</button>
-          <button class="btn-reject" onclick="reject('${doc.id}')">Tolak</button>
-        </td>
-      </tr>`;
+function listenDeposits(){
+  db.collection("history").where("type","==","Deposit").where("status","==","Pending")
+    .onSnapshot(snap=>{
+      let html = "<table><tr><th>User</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr>";
+      snap.forEach(doc=>{
+        let d=doc.data();
+        html += `<tr>
+          <td>${d.user}</td>
+          <td>Rp ${d.amount}</td>
+          <td>${d.status}</td>
+          <td>
+            <button class="btn-approve" onclick="approveDeposit('${doc.id}','${d.user}',${d.amount})">Approve</button>
+            <button class="btn-reject" onclick="reject('${doc.id}')">Tolak</button>
+          </td>
+        </tr>`;
+      });
+      html+="</table>";
+      document.getElementById("depositList").innerHTML=html;
     });
-    html+="</table>";
-    document.getElementById("depositList").innerHTML=html;
-  });
 }
 
-// Load Withdraws
-function loadWithdraws(){
-  db.collection("history").where("type","==","Withdraw").where("status","==","Pending").get().then(snap=>{
-    let html = "<table><tr><th>User</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr>";
-    snap.forEach(doc=>{
-      let d=doc.data();
-      html += `<tr>
-        <td>${d.user}</td>
-        <td>Rp ${d.amount}</td>
-        <td>${d.status}</td>
-        <td>
-          <button class="btn-approve" onclick="approveWithdraw('${doc.id}','${d.user}',${d.amount})">Approve</button>
-          <button class="btn-reject" onclick="reject('${doc.id}')">Tolak</button>
-        </td>
-      </tr>`;
+function listenWithdraws(){
+  db.collection("history").where("type","==","Withdraw").where("status","==","Pending")
+    .onSnapshot(snap=>{
+      let html = "<table><tr><th>User</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr>";
+      snap.forEach(doc=>{
+        let d=doc.data();
+        html += `<tr>
+          <td>${d.user}</td>
+          <td>Rp ${d.amount}</td>
+          <td>${d.status}</td>
+          <td>
+            <button class="btn-approve" onclick="approveWithdraw('${doc.id}','${d.user}',${d.amount})">Approve</button>
+            <button class="btn-reject" onclick="reject('${doc.id}')">Tolak</button>
+          </td>
+        </tr>`;
+      });
+      html+="</table>";
+      document.getElementById("withdrawList").innerHTML=html;
     });
-    html+="</table>";
-    document.getElementById("withdrawList").innerHTML=html;
-  });
 }
 
-// Approve Deposit
+// === ACTIONS ===
 function approveDeposit(docId, user, amount){
   db.collection("users").doc(user).update({
     balance: firebase.firestore.FieldValue.increment(amount)
   });
   db.collection("history").doc(docId).update({status:"Approved"});
-  alert("Deposit Approved!");
-  loadDeposits(); loadUsers();
 }
 
-// Approve Withdraw
 function approveWithdraw(docId, user, amount){
   db.collection("users").doc(user).update({
     balance: firebase.firestore.FieldValue.increment(-amount)
   });
   db.collection("history").doc(docId).update({status:"Approved"});
-  alert("Withdraw Approved!");
-  loadWithdraws(); loadUsers();
 }
 
-// Reject Transaksi
 function reject(docId){
   db.collection("history").doc(docId).update({status:"Rejected"});
-  alert("Transaksi ditolak!");
-  loadDeposits(); loadWithdraws();
 }
 
-// Edit Balance Manual
-function editBalance(userId){
-  let newBalance = prompt("Masukkan saldo baru:");
-  if(newBalance!==null){
-    db.collection("users").doc(userId).update({balance:parseInt(newBalance)});
-    loadUsers();
-  }
+// === Edit User Manual ===
+function editUser(userId){
+  db.collection("users").doc(userId).get().then(doc=>{
+    let d = doc.data();
+    let saldo = prompt("Saldo:", d.balance||0);
+    let bank = prompt("Bank:", d.bank||"");
+    let rek  = prompt("Rekening:", d.rekening||"");
+    let phone = prompt("No HP:", d.phone||"");
+    db.collection("users").doc(userId).update({
+      balance: parseInt(saldo),
+      bank: bank,
+      rekening: rek,
+      phone: phone
+    });
+  });
 }
 </script>
 </body>
