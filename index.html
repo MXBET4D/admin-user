@@ -29,16 +29,18 @@
     header { background:#111a33; padding:15px; text-align:center; color:#FFD700; font-size:20px; font-weight:bold; }
     .container { padding:15px; }
     .card { background:#1a1a1a; padding:15px; margin:10px 0; border-radius:8px; }
-    table { width:100%; border-collapse:collapse; margin-top:10px; font-size:14px; }
+    table { width:100%; border-collapse:collapse; margin-top:10px; }
     th, td { border:1px solid #444; padding:8px; text-align:left; }
     th { background:#222; }
     button { padding:5px 10px; margin:2px; cursor:pointer; border:none; border-radius:4px; }
     .btn-approve { background:#00cc66; color:white; }
     .btn-reject { background:#ff4444; color:white; }
-    .btn-edit { background:#2196F3; color:white; }
+    .btn-edit { background:#FFD700; color:#000; }
     .login-box { max-width:300px; margin:50px auto; background:#111; padding:20px; border-radius:8px; text-align:center; }
     .login-box input { width:90%; padding:8px; margin:6px 0; border-radius:4px; border:none; }
     .login-box button { width:100%; padding:8px; background:#FFD700; border:none; border-radius:4px; font-weight:bold; }
+    .edit-form { background:#222; padding:10px; margin-top:5px; border-radius:6px; }
+    .edit-form input { width:95%; margin:5px 0; padding:6px; }
   </style>
 </head>
 <body>
@@ -74,7 +76,7 @@ function adminLogin(){
     .then(()=> {
       document.getElementById("loginBox").style.display="none";
       document.getElementById("adminArea").style.display="block";
-      listenUsers(); listenDeposits(); listenWithdraws();
+      loadUsers(); loadDeposits(); loadWithdraws();
     })
     .catch(err=>alert("Login gagal: "+err.message));
 }
@@ -85,20 +87,32 @@ function logout(){
   document.getElementById("loginBox").style.display="block";
 }
 
-// === LISTENER REALTIME ===
-function listenUsers(){
-  db.collection("users").onSnapshot(snap=>{
-    let html = "<table><tr><th>User</th><th>Saldo</th><th>Bank</th><th>Rekening</th><th>HP</th><th>Aksi</th></tr>";
+// Load Users
+function loadUsers(){
+  db.collection("users").get().then(snap=>{
+    let html = "<table><tr><th>Username</th><th>Saldo</th><th>Bank</th><th>Rekening</th><th>HP</th><th>Tgl Join</th><th>Aksi</th></tr>";
     snap.forEach(doc=>{
       let d=doc.data();
+      let tgl = d.createdAt ? new Date(d.createdAt.seconds*1000).toLocaleString() : "-";
       html += `<tr>
         <td>${doc.id}</td>
         <td>Rp ${d.balance||0}</td>
         <td>${d.bank||''}</td>
         <td>${d.rekening||''}</td>
         <td>${d.phone||''}</td>
-        <td>
-          <button class="btn-edit" onclick="editUser('${doc.id}')">Edit</button>
+        <td>${tgl}</td>
+        <td><button class="btn-edit" onclick="editUser('${doc.id}')">Edit</button></td>
+      </tr>
+      <tr id="edit-${doc.id}" style="display:none;">
+        <td colspan="7">
+          <div class="edit-form">
+            <input id="saldo-${doc.id}" type="number" placeholder="Saldo" value="${d.balance||0}">
+            <input id="bank-${doc.id}" type="text" placeholder="Bank" value="${d.bank||''}">
+            <input id="rek-${doc.id}" type="text" placeholder="Rekening" value="${d.rekening||''}">
+            <input id="phone-${doc.id}" type="text" placeholder="No HP" value="${d.phone||''}">
+            <button onclick="saveUser('${doc.id}')">Simpan</button>
+            <button onclick="cancelEdit('${doc.id}')">Batal</button>
+          </div>
         </td>
       </tr>`;
     });
@@ -107,82 +121,92 @@ function listenUsers(){
   });
 }
 
-function listenDeposits(){
-  db.collection("history").where("type","==","Deposit").where("status","==","Pending")
-    .onSnapshot(snap=>{
-      let html = "<table><tr><th>User</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr>";
-      snap.forEach(doc=>{
-        let d=doc.data();
-        html += `<tr>
-          <td>${d.user}</td>
-          <td>Rp ${d.amount}</td>
-          <td>${d.status}</td>
-          <td>
-            <button class="btn-approve" onclick="approveDeposit('${doc.id}','${d.user}',${d.amount})">Approve</button>
-            <button class="btn-reject" onclick="reject('${doc.id}')">Tolak</button>
-          </td>
-        </tr>`;
-      });
-      html+="</table>";
-      document.getElementById("depositList").innerHTML=html;
-    });
+function editUser(uid){
+  document.getElementById("edit-"+uid).style.display="table-row";
+}
+function cancelEdit(uid){
+  document.getElementById("edit-"+uid).style.display="none";
+}
+function saveUser(uid){
+  let saldo = parseInt(document.getElementById("saldo-"+uid).value);
+  let bank = document.getElementById("bank-"+uid).value;
+  let rek = document.getElementById("rek-"+uid).value;
+  let phone = document.getElementById("phone-"+uid).value;
+  db.collection("users").doc(uid).update({
+    balance: saldo, bank: bank, rekening: rek, phone: phone
+  }).then(()=>{
+    alert("User berhasil diupdate!");
+    loadUsers();
+  });
 }
 
-function listenWithdraws(){
-  db.collection("history").where("type","==","Withdraw").where("status","==","Pending")
-    .onSnapshot(snap=>{
-      let html = "<table><tr><th>User</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr>";
-      snap.forEach(doc=>{
-        let d=doc.data();
-        html += `<tr>
-          <td>${d.user}</td>
-          <td>Rp ${d.amount}</td>
-          <td>${d.status}</td>
-          <td>
-            <button class="btn-approve" onclick="approveWithdraw('${doc.id}','${d.user}',${d.amount})">Approve</button>
-            <button class="btn-reject" onclick="reject('${doc.id}')">Tolak</button>
-          </td>
-        </tr>`;
-      });
-      html+="</table>";
-      document.getElementById("withdrawList").innerHTML=html;
+// Load Deposits
+function loadDeposits(){
+  db.collection("history").where("type","==","Deposit").where("status","==","Pending").get().then(snap=>{
+    let html = "<table><tr><th>User</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr>";
+    snap.forEach(doc=>{
+      let d=doc.data();
+      html += `<tr>
+        <td>${d.user}</td>
+        <td>Rp ${d.amount}</td>
+        <td>${d.status}</td>
+        <td>
+          <button class="btn-approve" onclick="approveDeposit('${doc.id}','${d.user}',${d.amount})">Approve</button>
+          <button class="btn-reject" onclick="reject('${doc.id}')">Tolak</button>
+        </td>
+      </tr>`;
     });
+    html+="</table>";
+    document.getElementById("depositList").innerHTML=html;
+  });
 }
 
-// === ACTIONS ===
+// Load Withdraws
+function loadWithdraws(){
+  db.collection("history").where("type","==","Withdraw").where("status","==","Pending").get().then(snap=>{
+    let html = "<table><tr><th>User</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr>";
+    snap.forEach(doc=>{
+      let d=doc.data();
+      html += `<tr>
+        <td>${d.user}</td>
+        <td>Rp ${d.amount}</td>
+        <td>${d.status}</td>
+        <td>
+          <button class="btn-approve" onclick="approveWithdraw('${doc.id}','${d.user}',${d.amount})">Approve</button>
+          <button class="btn-reject" onclick="reject('${doc.id}')">Tolak</button>
+        </td>
+      </tr>`;
+    });
+    html+="</table>";
+    document.getElementById("withdrawList").innerHTML=html;
+  });
+}
+
+// Approve Deposit
 function approveDeposit(docId, user, amount){
   db.collection("users").doc(user).update({
     balance: firebase.firestore.FieldValue.increment(amount)
   });
   db.collection("history").doc(docId).update({status:"Approved"});
+  alert("Deposit Approved!");
+  loadDeposits(); loadUsers();
 }
 
+// Approve Withdraw
 function approveWithdraw(docId, user, amount){
   db.collection("users").doc(user).update({
     balance: firebase.firestore.FieldValue.increment(-amount)
   });
   db.collection("history").doc(docId).update({status:"Approved"});
+  alert("Withdraw Approved!");
+  loadWithdraws(); loadUsers();
 }
 
+// Reject Transaksi
 function reject(docId){
   db.collection("history").doc(docId).update({status:"Rejected"});
-}
-
-// === Edit User Manual ===
-function editUser(userId){
-  db.collection("users").doc(userId).get().then(doc=>{
-    let d = doc.data();
-    let saldo = prompt("Saldo:", d.balance||0);
-    let bank = prompt("Bank:", d.bank||"");
-    let rek  = prompt("Rekening:", d.rekening||"");
-    let phone = prompt("No HP:", d.phone||"");
-    db.collection("users").doc(userId).update({
-      balance: parseInt(saldo),
-      bank: bank,
-      rekening: rek,
-      phone: phone
-    });
-  });
+  alert("Transaksi ditolak!");
+  loadDeposits(); loadWithdraws();
 }
 </script>
 </body>
