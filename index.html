@@ -632,10 +632,6 @@
   function escapeHtml(s=''){ return (''+s).replace(/[&<>"']/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
   function numberWithCommas(x){ if(x===undefined||x===null) return '0'; return (''+x).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
 
-  // simple initial loads
-  function loadDeposits(){ loadDeposits(); } // placeholder to satisfy potential call before auth
-  function loadWithdraws(){ loadWithdraws(); }
-
   // expose functions used from HTML strings
   window.loadUsers = loadUsers;
   window.switchView = switchView;
