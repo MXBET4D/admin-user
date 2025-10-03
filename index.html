@@ -117,19 +117,19 @@
 </div>
 
 <!-- MAIN PANEL (visible when signed in) -->
-<div class="wrap">
- <nav class="sidebar">
- <!-- Sidebar tombol -->
-    <div class="brand"><img src="maxbet.png" alt="logo"></div>
-    <button id="menuUsers" class="active" onclick="switchView('users', this)">All User</button>
-    <button id="menuDeposits" onclick="switchView('deposits', this)">Deposit</button>
-    <button id="menuWithdraws" onclick="switchView('withdraws', this)">Withdraw</button>
-    <button id="menuReks" onclick="switchView('reks', this)">Rekening</button>
-    <div style="height:8px"></div>
-    <button onclick="loadAll()" style="background:#0b0f14;color:var(--muted)">Refresh</button>
-    <div style="height:8px"></div>
-    <button onclick="doSignOut()" style="background:#111a33;color:var(--accent)">Sign out</button>
-  </nav>
+<div id="panel" style="display:none">   <!-- ✅ Tambahkan ini -->
+  <div class="wrap">
+    <nav class="sidebar">
+      <div class="brand"><img src="maxbet.png" alt="logo"></div>
+      <button id="menuUsers" class="active" onclick="switchView('users', this)">All User</button>
+      <button id="menuDeposits" onclick="switchView('deposits', this)">Deposit</button>
+      <button id="menuWithdraws" onclick="switchView('withdraws', this)">Withdraw</button>
+      <button id="menuReks" onclick="switchView('reks', this)">Rekening</button>
+      <div style="height:8px"></div>
+      <button onclick="loadAll()" style="background:#0b0f14;color:var(--muted)">Refresh</button>
+      <div style="height:8px"></div>
+      <button onclick="doSignOut()" style="background:#111a33;color:var(--accent)">Sign out</button>
+    </nav>
 
     <main>
       <!-- USERS VIEW -->
