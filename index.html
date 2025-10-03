@@ -324,14 +324,16 @@
   }
 
   // ---------- USERS ----------
-  async function loadUsers(){
-    try{
-      const snap = await db.collection('users').get();
-      usersCache = [];
-      snap.forEach(d=> usersCache.push({id:d.id, ...d.data()}));
-      renderUsers();
-    }catch(e){ console.error(e); alert('Gagal load users: '+e.message) }
-  }
+  function loadUsers(){
+  db.collection('users').onSnapshot(snap=>{
+    usersCache = [];
+    snap.forEach(d=> usersCache.push({id:d.id, ...d.data()}));
+    renderUsers();
+  }, err=>{
+    console.error(err);
+    alert('Realtime users error: '+err.message);
+  });
+}
 
    function renderUsers(){
     const q = $('userSearch').value.trim().toLowerCase();
@@ -451,19 +453,16 @@
   }
 
   // ---------- DEPOSITS ----------
-  async function loadDeposits(){
-    try{
-      const status = $('filterDepositStatus').value || 'Pending';
-      let q = db.collection('history').where('type','==','Deposit');
-      if(status!=='All') q = q.where('status','==',status);
-      // simple username filter
-      const uname = $('depositSearch').value.trim();
-      const snap = await q.orderBy('date','desc').limit(200).get();
-      depositsCache = [];
-      snap.forEach(d=>depositsCache.push({id:d.id, ...d.data()}));
-      renderDeposits();
-    }catch(e){ console.error(e); alert('Gagal load deposits: '+e.message) }
-  }
+function loadDeposits(){
+  const status = $('filterDepositStatus').value || 'Pending';
+  let q = db.collection('history').where('type','==','Deposit');
+  if(status!=='All') q = q.where('status','==',status);
+  q.orderBy('date','desc').limit(200).onSnapshot(snap=>{
+    depositsCache = [];
+    snap.forEach(d=> depositsCache.push({id:d.id, ...d.data()}));
+    renderDeposits();
+  }, err=>console.error('Realtime deposit error',err));
+}
 
   function renderDeposits(){
     const q = $('depositSearch').value.trim().toLowerCase();
@@ -508,17 +507,16 @@
   }
 
   // ---------- WITHDRAWS ----------
-  async function loadWithdraws(){
-    try{
-      const status = $('filterWithdrawStatus').value || 'Pending';
-      let q = db.collection('history').where('type','==','Withdraw');
-      if(status!=='All') q = q.where('status','==',status);
-      const snap = await q.orderBy('date','desc').limit(200).get();
-      withdrawsCache = [];
-      snap.forEach(d=>withdrawsCache.push({id:d.id, ...d.data()}));
-      renderWithdraws();
-    }catch(e){ console.error(e); alert('Gagal load withdraws: '+e.message) }
-  }
+function loadWithdraws(){
+  const status = $('filterWithdrawsStatus').value || 'Pending';
+  let q = db.collection('history').where('type','==','Withdraws');
+  if(status!=='All') q = q.where('status','==',status);
+  q.orderBy('date','desc').limit(200).onSnapshot(snap=>{
+    WithdrawsCache = [];
+    snap.forEach(d=> WithdrawsCache.push({id:d.id, ...d.data()}));
+    renderDeposits();
+  }, err=>console.error('Realtime Withdraw error',err));
+}
 
   function renderWithdraws(){
     const q = $('withdrawSearch').value.trim().toLowerCase();
