@@ -508,13 +508,13 @@ function loadDeposits(){
 
   // ---------- WITHDRAWS ----------
 function loadWithdraws(){
-  const status = $('filterWithdrawsStatus').value || 'Pending';
+  const status = $('filterWithdrawStatus').value || 'Pending';
   let q = db.collection('history').where('type','==','Withdraws');
   if(status!=='All') q = q.where('status','==',status);
   q.orderBy('date','desc').limit(200).onSnapshot(snap=>{
-    WithdrawsCache = [];
-    snap.forEach(d=> WithdrawsCache.push({id:d.id, ...d.data()}));
-    renderDeposits();
+    withdrawsCache = [];
+    snap.forEach(d=> withdrawsCache.push({id:d.id, ...d.data()}));
+    renderWithdraws();
   }, err=>console.error('Realtime Withdraw error',err));
 }
 
@@ -581,14 +581,13 @@ function loadWithdraws(){
   }
 
   // ---------- REKENING ----------
-  async function loadReks(){
-    try{
-      const snap = await db.collection('rekeningen').orderBy('bank').get();
-      reksCache = [];
-      snap.forEach(d=>reksCache.push({id:d.id, ...d.data()}));
-      renderReks();
-    }catch(e){ console.error(e); $('reksTable').innerText='Gagal load reks: '+e.message }
-  }
+function loadReks(){
+  db.collection('rekeningen').orderBy('bank').onSnapshot(snap=>{
+    reksCache = [];
+    snap.forEach(d=>reksCache.push({id:d.id, ...d.data()}));
+    renderReks();
+  }, err=>console.error('Realtime rekening error',err));
+}
 
   function renderReks(){
     let html = '<table><thead><tr><th>No</th><th>Bank</th><th>No Rek</th><th>A/N</th><th>Aksi</th></tr></thead><tbody>';
